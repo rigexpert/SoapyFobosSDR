@@ -23,7 +23,7 @@ message(FATAL_ERROR "Fobos SDR development files not found...")
 endif ()
 ########################################################################
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${FOBOS_INCLUDE_DIRS})
+include_directories(${LIBFOBOS_INCLUDE_DIRS})
 ########################################################################
 if (APPLE)
     message(STATUS "Not tested yet")
@@ -40,8 +40,9 @@ SOAPY_SDR_MODULE_UTIL(
         Settings.cpp
         Streaming.cpp
     LIBRARIES
-       ${FOBOS_LIBRARIES}
+       ${LIBFOBOS_LIBRARIES}
 )
+target_link_libraries(FobosSDRSupport PRIVATE ${LIBFOBOS_LIBRARIES})
 ########################################################################
 # uninstall target
 ########################################################################

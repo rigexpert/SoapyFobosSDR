@@ -34,9 +34,3 @@ Doxyfile
 .*.swp
 
 doc/
-
-
-CMakeCache.txt
-*/CMakeFiles
-CMakeFiles
-*.cmake
