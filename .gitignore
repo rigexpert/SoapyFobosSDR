@@ -1,32 +1,42 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
+build/
+Makefile
+Makefile.in
+.deps
+.libs
 *.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
+*.lo
 *.la
-*.a
-*.lib
+*.pc
+aclocal.m4
+acinclude.m4
+aminclude.am
+m4/*.m4
+autom4te.cache
+config.h*
+config.sub
+config.log
+config.status
+config.guess
+configure
+configure~
+compile
+depcomp
+missing
+ltmain.sh
+install-sh
+stamp-h1
+libtool
+Doxyfile
 
-# Executables
-*.exe
-*.out
-*.app
+.tarball-version
+.version
+
+.*.swp
+
+doc/
+
+
+CMakeCache.txt
+*/CMakeFiles
+CMakeFiles
+*.cmake

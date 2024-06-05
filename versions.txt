@@ -1,0 +1,4 @@
+v.1.0.0 (june 5, 2024)
+- initial, basic functionality
+- SoapySDR v0.8.1 compatible
+- libfobos v.2.2.2 compatible
