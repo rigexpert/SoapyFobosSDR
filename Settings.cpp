@@ -41,24 +41,78 @@ SoapyFobosSDR::SoapyFobosSDR(const SoapySDR::Kwargs &args):
         SoapySDR_logf(SOAPY_SDR_INFO, "Opening %s...", args.at("label").c_str());
     }
 
-    //if (args.count("serial") == 0) throw std::runtime_error("No RTL-SDR devices found!");
+    // Determine device index based on args
+    std::string target_serial;
+    if (args.count("serial") != 0) {
+        target_serial = args.at("serial");
+        SoapySDR_logf(SOAPY_SDR_DEBUG, "Searching for device with serial: %s", target_serial.c_str());
+        
+        bool found = false;
+        const int max_devices = 10; // Arbitrary max number of devices to probe
+        for (int i = 0; i < max_devices; ++i) {
+            fobos_dev_t* temp_dev = nullptr;
+            int open_res = fobos_rx_open(&temp_dev, i);
+            if (open_res != 0) {
+                continue;
+            }
+            
+            // Temporary buffers for board info (assuming sizes match header definitions, e.g., 256 chars)
+            char temp_hw_revision[256] = {0};
+            char temp_fw_version[256] = {0};
+            char temp_manufacturer[256] = {0};
+            char temp_product[256] = {0};
+            char temp_serial[256] = {0};
+            
+            int info_res = fobos_rx_get_board_info(temp_dev, temp_hw_revision, temp_fw_version, 
+                                                   temp_manufacturer, temp_product, temp_serial);
+            
+            fobos_rx_close(temp_dev);
+            temp_dev = nullptr;
+            
+            if (info_res == 0 && strcmp(temp_serial, target_serial.c_str()) == 0) {
+                // Optional: Verify manufacturer if specified
+                if (args.count("manufacturer") != 0) {
+                    std::string target_manufacturer = args.at("manufacturer");
+                    if (strcmp(temp_manufacturer, target_manufacturer.c_str()) != 0) {
+                        SoapySDR_logf(SOAPY_SDR_WARNING, "Serial matched but manufacturer '%s' != '%s'", 
+                                      temp_manufacturer, target_manufacturer.c_str());
+                        continue;
+                    }
+                }
+                _device_index = i;
+                found = true;
+                SoapySDR_logf(SOAPY_SDR_DEBUG, "Found matching device at index %d", _device_index);
+                break;
+            }
+        }
+        
+        if (!found) {
+            throw std::runtime_error("No Fobos SDR device found with serial '" + target_serial + "'");
+        }
+    } else if (args.count("index") != 0) {
+        // Fallback to explicit index if provided
+        try {
+            _device_index = std::stoi(args.at("index"));
+            SoapySDR_logf(SOAPY_SDR_DEBUG, "Using explicit device index: %d", _device_index);
+        } catch (const std::exception&) {
+            throw std::runtime_error("Invalid 'index' parameter in args");
+        }
+    } else {
+        // Default to index 0
+        SoapySDR_logf(SOAPY_SDR_DEBUG, "No serial or index specified, using default device index 0");
+    }
 
-    //const auto serial = args.at("serial");
-    //deviceId = rtlsdr_get_index_by_serial(serial.c_str());
-    //if (_deviceId < 0) throw std::runtime_error("rtlsdr_get_index_by_serial("+serial+") - " + std::to_string(_deviceId));
-
-    _device_index = 0;
     SoapySDR_logf(SOAPY_SDR_DEBUG, "opening device #%d", _device_index);
     result = fobos_rx_open(&_dev, _device_index);
     if (result != 0) 
     {
-        throw std::runtime_error("Unable to open Fobos SDR device");
+        throw std::runtime_error("Unable to open Fobos SDR device at index " + std::to_string(_device_index));
     }
 
     result = fobos_rx_get_board_info(_dev, hw_revision, fw_version, manufacturer, product, serial);       
     if (result != 0) 
     {
-        throw std::runtime_error("Unable to obtain devoce info");
+        throw std::runtime_error("Unable to obtain device info");
     }
 }
 
@@ -492,5 +546,4 @@ std::string SoapyFobosSDR::readSetting(const std::string &key) const
     }
     return "";
 }
-
 
