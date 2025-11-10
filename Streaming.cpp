@@ -3,6 +3,7 @@
 //  V.T.
 //  LGPL-2.1 or above LICENSE
 //  05.06.2024
+//  10.11.2025 - closeStream()
 //==============================================================================
 
 #include "SoapyFobosSDR.hpp"
@@ -157,6 +158,11 @@ void SoapyFobosSDR::closeStream(SoapySDR::Stream *stream)
 #ifdef SOAPY_FOBOS_PRINT_DEBUG  
     printf(">>> %s::%s()\n", __CLASS__, __FUNCTION__);
 #endif 
+    if (_rx_async_thread.joinable())
+    {
+        fobos_rx_cancel_async(_dev);
+        _rx_async_thread.join();
+    }
     if (_rx_bufs)
     {
         for (unsigned int i = 0; i < _rx_buffs_count; i++)

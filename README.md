@@ -67,6 +67,19 @@ SoapySDRUtil --probe="driver=fobos"
 
 <img src="./showimg/Screenshot001.png" scale="100%"/><br />
 
+## Multiple devices support
+```
+SoapySDRUtil --find="driver=fobos"
+```
+<img src="./showimg/Screenshot003.png" scale="100%"/><br />
+
+Use "index" key:
+```
+SoapySDRUtil --probe="driver=fobos,index=0"
+SoapySDRUtil --probe="driver=fobos,index=1"
+```
+
+
 ## Test with GNU Radio
 
 See [soapy_fobossdr_test.grc](test/soapy_fobossdr_test.grc)

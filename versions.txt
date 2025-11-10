@@ -1,3 +1,7 @@
+v.1.0.1 (beta)
+- multiple devices support, use "index" SoapySDR argument i.e. SoapySDRUtil --probe="driver=fobos,index=1"
+- closeStream() fixed
+
 v.1.0.0 (june 5, 2024)
 - initial, basic functionality
 - SoapySDR v0.8.1 compatible

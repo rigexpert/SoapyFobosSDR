@@ -3,6 +3,7 @@
 //  V.T.
 //  LGPL-2.1 or above LICENSE
 //  05.06.2024
+//  10.11.2025 - open by index support
 //==============================================================================
 
 #include "SoapyFobosSDR.hpp"
@@ -41,13 +42,21 @@ SoapyFobosSDR::SoapyFobosSDR(const SoapySDR::Kwargs &args):
         SoapySDR_logf(SOAPY_SDR_INFO, "Opening %s...", args.at("label").c_str());
     }
 
-    //if (args.count("serial") == 0) throw std::runtime_error("No RTL-SDR devices found!");
-
-    //const auto serial = args.at("serial");
-    //deviceId = rtlsdr_get_index_by_serial(serial.c_str());
-    //if (_deviceId < 0) throw std::runtime_error("rtlsdr_get_index_by_serial("+serial+") - " + std::to_string(_deviceId));
-
-    _device_index = 0;
+    if (args.count("serial") != 0)
+    {
+        // not omplemented, use "index" instead
+    } 
+#ifdef SOAPY_FOBOS_PRINT_DEBUG  
+    for (auto & arg : args)
+    {
+        printf("args[]: %s = %s\n", arg.first.c_str(), arg.second.c_str());
+    }
+#endif    
+    const auto it = args.find("index");
+    if (it != args.end())
+    {
+        _device_index = std::stoi(it->second);
+    }
     SoapySDR_logf(SOAPY_SDR_DEBUG, "opening device #%d", _device_index);
     result = fobos_rx_open(&_dev, _device_index);
     if (result != 0) 
