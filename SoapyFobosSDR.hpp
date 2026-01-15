@@ -172,6 +172,7 @@ private:
     double _sample_rate;
     double _center_frequency;
     int _direct_sampling;
+    int _clock_source;
     double _lna_gain;
     double _lna_gain_scale;
     double _vga_gain;
