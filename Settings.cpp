@@ -17,6 +17,7 @@ SoapyFobosSDR::SoapyFobosSDR(const SoapySDR::Kwargs &args):
     _sample_rate(25000000.0),
     _center_frequency(100000000.0),
     _direct_sampling(0),
+    _clock_source(0),
     _lna_gain(0),
     _lna_gain_scale(1.0 / 16.0),
     _vga_gain(0),
@@ -44,18 +45,64 @@ SoapyFobosSDR::SoapyFobosSDR(const SoapySDR::Kwargs &args):
 
     if (args.count("serial") != 0)
     {
-        // not omplemented, use "index" instead
+        // Find device by serial number
+        char serials[256] = {0};
+        int count = fobos_rx_list_devices(serials);
+        
+        if (count > 0)
+        {
+            char serials_copy[256];
+            strncpy(serials_copy, serials, sizeof(serials_copy) - 1);
+            serials_copy[sizeof(serials_copy) - 1] = '\0';
+            
+            char* pserial = strtok(serials_copy, " ");
+            int found_index = -1;
+            
+            // Search for device with specified serial number
+            for (int idx = 0; idx < count; idx++)
+            {
+                if (pserial && args.at("serial") == std::string(pserial))
+                {
+                    found_index = idx;
+                    SoapySDR_logf(SOAPY_SDR_INFO, 
+                        "Found device with serial '%s' at index %d", 
+                        pserial, idx);
+                    break;
+                }
+                pserial = strtok(nullptr, " ");
+            }
+            
+            if (found_index >= 0)
+            {
+                _device_index = found_index;
+            }
+            else
+            {
+                SoapySDR_logf(SOAPY_SDR_ERROR, 
+                    "Device with serial '%s' not found. Available devices: %s", 
+                    args.at("serial").c_str(), serials);
+                throw std::runtime_error("Device with specified serial not found");
+            }
+        }
+        else
+        {
+            throw std::runtime_error("No Fobos devices found");
+        }
     } 
+    else
+    {
+        // Use index if serial not specified
 #ifdef SOAPY_FOBOS_PRINT_DEBUG  
-    for (auto & arg : args)
-    {
-        printf("args[]: %s = %s\n", arg.first.c_str(), arg.second.c_str());
-    }
+        for (auto & arg : args)
+        {
+            printf("args[]: %s = %s\n", arg.first.c_str(), arg.second.c_str());
+        }
 #endif    
-    const auto it = args.find("index");
-    if (it != args.end())
-    {
-        _device_index = std::stoi(it->second);
+        const auto it = args.find("index");
+        if (it != args.end())
+        {
+            _device_index = std::stoi(it->second);
+        }
     }
     SoapySDR_logf(SOAPY_SDR_DEBUG, "opening device #%d", _device_index);
     result = fobos_rx_open(&_dev, _device_index);
@@ -469,6 +516,19 @@ SoapySDR::ArgInfoList SoapyFobosSDR::getSettingInfo(void) const
         info.optionNames.push_back("On");
         args.push_back(info);
     }
+    {
+        SoapySDR::ArgInfo info;
+        info.key = "clock_source";
+        info.value = "0";
+        info.name = "Clock Source";
+        info.description = "Clock source: 0=internal (default), 1=external";
+        info.type = SoapySDR::ArgInfo::STRING;
+        info.options.push_back("0");
+        info.optionNames.push_back("Internal");
+        info.options.push_back("1");
+        info.optionNames.push_back("External");
+        args.push_back(info);
+    }
     return args;
 }
 
@@ -491,6 +551,39 @@ void SoapyFobosSDR::writeSetting(const std::string &key, const std::string &valu
         SoapySDR_logf(SOAPY_SDR_DEBUG, "Direct sampling mode: %d", _direct_sampling);
         fobos_rx_set_direct_sampling(_dev, _direct_sampling);
     }
+    else if (key == "clock_source")
+    {
+        try
+        {
+            _clock_source = std::stoi(value);
+            if (_clock_source < 0 || _clock_source > 1)
+            {
+                SoapySDR_logf(SOAPY_SDR_ERROR, "Invalid clock source '%s', must be 0 (internal) or 1 (external)", value.c_str());
+                _clock_source = 0;
+                return;
+            }
+        }
+        catch (const std::invalid_argument &) 
+        {
+            if (value == "external" || value == "slave")
+                _clock_source = 1;
+            else if (value == "internal" || value == "master")
+                _clock_source = 0;
+            else
+            {
+                SoapySDR_logf(SOAPY_SDR_ERROR, "Invalid clock source '%s', use: 0/internal/master or 1/external/slave", value.c_str());
+                return;
+            }
+        }
+        
+        SoapySDR_logf(SOAPY_SDR_INFO, "Setting clock source: %d (%s)", _clock_source, _clock_source ? "external" : "internal");
+        
+        int result = fobos_rx_set_clk_source(_dev, _clock_source);
+        if (result != 0)
+        {
+            SoapySDR_logf(SOAPY_SDR_ERROR, "fobos_rx_set_clk_source failed with code %d", result);
+        }
+    }
 }
 
 std::string SoapyFobosSDR::readSetting(const std::string &key) const
@@ -499,7 +592,9 @@ std::string SoapyFobosSDR::readSetting(const std::string &key) const
     {
         return std::to_string(_direct_sampling);
     }
+    if (key == "clock_source")
+    {
+        return std::to_string(_clock_source);
+    }
     return "";
 }
-
-
