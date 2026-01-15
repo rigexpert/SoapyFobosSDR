@@ -4,6 +4,7 @@
 //  LGPL-2.1 or above LICENSE
 //  05.06.2024
 //  10.11.2025 - open by index support
+//  15.01.2026 - open by serial, specify clock_source by @oleksandrchumakovpaysera 
 //==============================================================================
 
 #include "SoapyFobosSDR.hpp"
@@ -553,27 +554,14 @@ void SoapyFobosSDR::writeSetting(const std::string &key, const std::string &valu
     }
     else if (key == "clock_source")
     {
-        try
+        if (value == "1" || value == "external" || value == "slave")
+            _clock_source = 1;
+        else if (value == "0" || value == "internal" || value == "master")
+            _clock_source = 0;
+        else
         {
-            _clock_source = std::stoi(value);
-            if (_clock_source < 0 || _clock_source > 1)
-            {
-                SoapySDR_logf(SOAPY_SDR_ERROR, "Invalid clock source '%s', must be 0 (internal) or 1 (external)", value.c_str());
-                _clock_source = 0;
-                return;
-            }
-        }
-        catch (const std::invalid_argument &) 
-        {
-            if (value == "external" || value == "slave")
-                _clock_source = 1;
-            else if (value == "internal" || value == "master")
-                _clock_source = 0;
-            else
-            {
-                SoapySDR_logf(SOAPY_SDR_ERROR, "Invalid clock source '%s', use: 0/internal/master or 1/external/slave", value.c_str());
-                return;
-            }
+            SoapySDR_logf(SOAPY_SDR_ERROR, "Invalid clock source '%s', use: 0/internal/master or 1/external/slave", value.c_str());
+            return;
         }
         
         SoapySDR_logf(SOAPY_SDR_INFO, "Setting clock source: %d (%s)", _clock_source, _clock_source ? "external" : "internal");
