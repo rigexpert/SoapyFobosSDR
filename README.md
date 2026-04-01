@@ -38,7 +38,9 @@ sudo ldconfig
 ### Windows
 Download and install latest version of **Pothos SDR dev environment** binaries from https://downloads.myriadrf.org/builds/PothosSDR/
 or build it from source https://github.com/pothosware/PothosSDR<br />
-Build actually SoapyFobosSDR:
+Download any libfobos release .zip pack from https://github.com/rigexpert/libfobos/releases<br />
+Unpack content to **libfobos** directory<br />
+Clone the repository and configure the build
 ```
 git clone [this repo]
 cd SoapyFobosSDR
@@ -46,9 +48,8 @@ mkdir build
 cd build
 cmake ..
 ```
-Visit https://github.com/rigexpert/libfobos/releases<br />
-Download any libfobos release .zip pack, for example  libfobos-2.2.2.zip<br />
-Unpack content to **libfobos** directory<br />
+Build actually SoapyFobosSDR:
+
 ```
 cmake --build . --config Release
 ```
