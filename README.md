@@ -21,6 +21,7 @@ See [versions.txt](versions.txt)
 
 * SoapySDR - https://github.com/pothosware/SoapySDR/
 * libfobos - https://github.com/rigexpert/libfobos/
+* libfobos-sdr-agile - https://github.com/rigexpert/libfobos-sdr-agile/
 
 ## How to build and install
 

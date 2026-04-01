@@ -3,6 +3,7 @@
 //  V.T.
 //  LGPL-2.1 or above LICENSE
 //  05.06.2024
+//  01.04.2026 - added support for fobos-sdr-agile
 //==============================================================================
 
 #include "SoapyFobosSDR.hpp"
@@ -19,17 +20,25 @@ static std::vector<SoapySDR::Kwargs> findSDR(const SoapySDR::Kwargs &args)
 #endif
     std::vector<SoapySDR::Kwargs> results;
     char serials[256] = {0};
-    int count = fobos_rx_list_devices(serials);
+    int count_stock = fobos_rx_list_devices(serials);
+    int count_agile = fobos_sdr_list_devices(serials);
 #ifdef SOAPY_FOBOS_PRINT_DEBUG
-    printf("[%d], %s\n", count, serials);
+    printf("stock: [%d], agile: [%d], seirals: %s\n", count_stock, count_agile, serials);
 #endif
     char* pserial = strtok(serials, " ");
-    SoapySDR_logf(SOAPY_SDR_DEBUG, "found devices: %d\n", count);
-    for (int index = 0; index < count; index++)
+    SoapySDR_logf(SOAPY_SDR_DEBUG, "found devices: %d\n", count_stock + count_agile);
+    for (int index = 0; index < count_stock + count_agile; index++)
     {
         SoapySDR_logf(SOAPY_SDR_DEBUG, "  dev# %i  %s\n", index, pserial);
         SoapySDR::Kwargs devInfo;
-        devInfo["label"] = "Fobos SDR";
+        if (index < count_stock)
+        {
+            devInfo["label"] = "Fobos SDR";
+        }
+        else
+        {
+            devInfo["label"] = "Fobos SDR (agile)";
+        }
         devInfo["serial"] = pserial;
         devInfo["manufacturer"] = "RigExpert";
         pserial = strtok(0, " ");

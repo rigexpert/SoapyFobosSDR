@@ -3,6 +3,7 @@
 //  V.T.
 //  LGPL-2.1 or above LICENSE
 //  05.06.2024
+//  01.04.2026 - added support for fobos-sdr-agile
 //==============================================================================
 
 #pragma once
@@ -11,14 +12,16 @@
 #include <SoapySDR/Logger.h>
 #include <SoapySDR/Types.h>
 #include <fobos.h>
+#include <fobos_sdr.h>
 #include <stdexcept>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 // uncomment to bisplay debug info
 //#define SOAPY_FOBOS_PRINT_DEBUG
-#define DEFAULT_BUFF_LEN (128 * 1024)
-#define DEFAULT_BUFS_COUNT 16
+#define DEFAULT_BUFF_LEN        (128 * 1024)
+#define DEFAULT_BUFS_COUNT      16
+#define INFO_LEN                64
 //==============================================================================
 class SoapyFobosSDR: public SoapySDR::Device
 {
@@ -155,18 +158,21 @@ public:
 
 private:
     const char * __CLASS__ = "SoapyFobosSDR"; 
-    //device handle
+    //device handles
     int _device_index;
-    fobos_dev_t *_dev;
+    fobos_dev_t *_dev_stock;        // handle for fobos device
+    fobos_sdr_dev_t *_dev_agile;    // handle for fobos-sdr-agile device
 
     // device info
-    char lib_version[32];
-    char drv_version[32];  
-    char hw_revision[32];
-    char fw_version[32];
-    char manufacturer[32];
-    char product[32];
-    char serial[32]; 
+    char lib_stock_version[INFO_LEN];
+    char lib_agile_version[INFO_LEN];
+    char drv_stock_version[INFO_LEN];  
+    char drv_agile_version[INFO_LEN];  
+    char hw_revision[INFO_LEN];
+    char fw_version[INFO_LEN];
+    char manufacturer[INFO_LEN];
+    char product[INFO_LEN];
+    char serial[INFO_LEN]; 
 
     //cached settings
     double _sample_rate;

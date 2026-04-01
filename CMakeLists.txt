@@ -3,6 +3,7 @@
 # (C) V.T.
 # LGPL-2.1+
 # 05.06.2024
+# 01.04.2026 - addd libfobos-sdr-agile
 ########################################################################
 cmake_minimum_required(VERSION 2.8.12)
 project(SoapyFobosSDR CXX)
@@ -15,11 +16,18 @@ if (NOT SoapySDR_FOUND)
     message(FATAL_ERROR "Soapy SDR development files not found...")
 endif ()
 ########################################################################
-# Searching for FobosSDR ALI library
+# Searching for FobosSDR API library
 ########################################################################
 find_package(LIBFOBOS)
 if (NOT LIBFOBOS_FOUND)
 message(FATAL_ERROR "Fobos SDR development files not found...")
+endif ()
+########################################################################
+# Searching for FobosSDR-agile API library
+########################################################################
+find_package(LIBFOBOS_SDR_AGILE)
+if (NOT LIBFOBOS_SDR_AGILE_FOUND)
+message(FATAL_ERROR "Fobos SDR (agile) development files not found...")
 endif ()
 ########################################################################
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -43,6 +51,7 @@ SOAPY_SDR_MODULE_UTIL(
        ${LIBFOBOS_LIBRARIES}
 )
 target_link_libraries(FobosSDRSupport PRIVATE ${LIBFOBOS_LIBRARIES})
+target_link_libraries(FobosSDRSupport PRIVATE ${LIBFOBOS_SDR_AGILE_LIBRARIES})
 ########################################################################
 # uninstall target
 ########################################################################

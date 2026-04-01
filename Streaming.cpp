@@ -4,6 +4,7 @@
 //  LGPL-2.1 or above LICENSE
 //  05.06.2024
 //  10.11.2025 - closeStream()
+//  01.04.2026 - added support for fobos-sdr-agile
 //==============================================================================
 
 #include "SoapyFobosSDR.hpp"
@@ -64,10 +65,16 @@ SoapySDR::ArgInfoList SoapyFobosSDR::getStreamArgsInfo(const int direction, cons
 /*******************************************************************
  * Async thread work
  ******************************************************************/
-
-static void _rx_callback(float* buf, uint32_t buf_length, void* ctx)
+static void _rx_stock_callback(float* buf, uint32_t buf_length, void* ctx)
 {
     SoapyFobosSDR * self = (SoapyFobosSDR *)ctx;
+    self->read_samples(buf, buf_length);
+}
+
+static void _rx_agile_callback(float *buf, uint32_t buf_length, struct fobos_sdr_dev_t* sender, void *user)
+{
+    (void)sender;
+    SoapyFobosSDR * self = (SoapyFobosSDR *)user;
     self->read_samples(buf, buf_length);
 }
 
@@ -76,7 +83,15 @@ void SoapyFobosSDR::rx_async_thread_loop(void)
 #ifdef SOAPY_FOBOS_PRINT_DEBUG  
     printf(">>> %s::%s() started\n", __CLASS__, __FUNCTION__);
 #endif      
-    int result = fobos_rx_read_async(_dev, &_rx_callback, this, _rx_buffs_count, _rx_buff_len);
+    int result = -1;
+    if (_dev_stock)
+    {
+        result = fobos_rx_read_async(_dev_stock, &_rx_stock_callback, this, _rx_buffs_count, _rx_buff_len);
+    }
+    else if (_dev_agile)
+    {
+        result = fobos_sdr_read_async(_dev_agile, &_rx_agile_callback, this, _rx_buffs_count, _rx_buff_len);
+    }
 #ifdef SOAPY_FOBOS_PRINT_DEBUG  
     printf(">>> %s::%s() done: %d\n", __CLASS__, __FUNCTION__, result);
 #endif
@@ -96,7 +111,14 @@ void SoapyFobosSDR::read_samples(float* buf, uint32_t buf_length)
         printf("Err: wrong buf_length!!!");
         printf("canceling...");
 #endif
-        fobos_rx_cancel_async(_dev);
+        if (_dev_stock)
+        {
+            fobos_rx_cancel_async(_dev_stock);
+        }
+        else if (_dev_agile)
+        {
+            fobos_sdr_cancel_async(_dev_agile);
+        }
     }
     std::lock_guard<std::mutex> lock(_rx_mutex);
     if (_rx_filled < _rx_buffs_count)
@@ -160,7 +182,14 @@ void SoapyFobosSDR::closeStream(SoapySDR::Stream *stream)
 #endif 
     if (_rx_async_thread.joinable())
     {
-        fobos_rx_cancel_async(_dev);
+        if (_dev_stock)
+        {
+            fobos_rx_cancel_async(_dev_stock);
+        }
+        else if (_dev_agile)
+        {
+            fobos_sdr_cancel_async(_dev_agile);
+        }
         _rx_async_thread.join();
     }
     if (_rx_bufs)
@@ -232,7 +261,14 @@ int SoapyFobosSDR::deactivateStream(SoapySDR::Stream *stream, const int flags, c
     }
     if (_rx_async_thread.joinable())
     {
-        fobos_rx_cancel_async(_dev);
+        if (_dev_stock)
+        {
+            fobos_rx_cancel_async(_dev_stock);
+        }
+        else if (_dev_agile)
+        {
+            fobos_sdr_cancel_async(_dev_agile);
+        }
         _rx_async_thread.join();
     }
     return 0;
